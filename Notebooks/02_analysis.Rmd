@@ -1,0 +1,442 @@
+
+
+## ARE ATTRACTORS MORE PREDATED?
+
+A: Most of the time. Unless prop.d = 0.9
+
+
+```{R}
+
+# Housekeeping
+rm ( list = ls())
+library ( stringr )
+list.files ( file.path(PROJHOME , "Output" , "ClusterExportedData"))
+load ( file.path  (PROJHOME , "Output", "ClusterExportedData" , "2022-08-12analysesforexport.rda" ))
+vars = bigdat$vars
+head(vars)
+x=vars$statistic
+hist(x)
+log.modulus = function(x)sign(x)*log(abs(x)+1,base=10)
+plot(log.modulus(x)~x)
+dats = vars
+dats$log.modulus=log.modulus(x)
+sig.effect = qchisq(0.975,1,0,T)
+sig.effect = c(sig.effect,-sig.effect)
+
+ 
+ library( ggplot2)
+ggplot(dats, aes ( y=log.modulus,x=prop.d,group=prop.d))+
+  geom_boxplot() + 
+  geom_point()+
+  theme_classic()+
+  geom_hline(yintercept =  log.modulus(sig.effect))
+
+dats[which(dats$prop.d==0.5 & dats$log.modulus < 0),]
+save(dats,file=file.path(PROJHOME,"Plots","PlotData","P02_statistics.rda"))
+save(dats,file =file.path(PROJHOME,"Plots","PlotData","P05_statistics.rda"))
+
+```
+
+
+## ARE ALIGNING GROUPS FASTER? 
+
+A: Yes
+
+```{R}
+# Housekeeping
+rm ( list = ls())
+library ( stringr )
+load ( file.path  (PROJHOME , "Output", "ClusterExportedData" , "2022-08-12analysesforexport.rda"))
+speeds = bigdat$group.spedss 
+vars = bigdat$vars
+speeds  = t(speeds[1:3,])
+speeds = cbind( as.vector ( speeds),c(
+rep ( vars$prop.d [1], 10000),
+rep ( vars$prop.d [2], 10000),
+rep ( vars$prop.d [3], 10000)))
+speeds = as.data.frame(speeds)
+dim(speeds)
+save(speeds,file = file.path(PROJHOME , "Plots" , "Plotdata", "P02_speedData.rda"))
+boxplot( speeds[,1] ~ speeds[,2])
+```
+
+# DO BORDERS REDUCE THE EFFICACY OF ALIGNMENT? 
+
+```{R}
+rm ( list = ls())
+library ( stringr )
+load ( file.path  (PROJHOME , "Output", "ClusterExportedData" , "2022-08-12analysesforexport.rda"))
+vars  = bigdat$vars
+log.modulus = function(x)sign(x)*log(abs(x)+1,base=10)
+vars$log.modulus=log.modulus(vars$statistic)
+varsnew = vars[c(1:3, which( !is.na(vars$border.dist.range))),]
+ggitem = varsnew
+names(ggitem)[1] = "prop.ds"
+ggitem$border.dist.range[which(is.na(ggitem$border.dist.range))]=0
+save( ggitem , file = file.path ( PROJHOME , "Plots" , "PlotData" , "P01_borderTest.rda"))
+d1 = ggitem[ggitem$prop.ds==0.1,]
+d2 = ggitem[ggitem$prop.ds==0.5,]
+d3 = ggitem[ggitem$prop.ds==0.9,]
+diff(d1$statistic)
+#par ( mar = c(5,2,5,8))
+{
+plot ( d1$log.modulus~d1$border.dist.range,type="b",
+       #xlim=c(-0.2,1.2),
+       ylim = c(-5,max(ggitem$log.modulus)) ,
+       xlab = "Borders around edge of modelled space?" ,
+       ylab = expression(paste ( "Alignment benefit ( " , chi^2 , "score)"  )),
+       col="yellow3",lwd=2,xaxt="n")
+axis( side = 1,at=seq(0,1),labels = c("FALSE" , "TRUE"))
+lines ( d2$log.modulus~d2$border.dist.range,type="b",lwd=2,col = "orange")
+lines ( d3$log.modulus~d3$border.dist.range,type="b",lwd=2,col="red")
+abline( h = log.modulus(c( - 3.844,3.844 )),lty=2, col="grey")
+}
+
+```
+
+# DOES FAST PREDATOR REDUCE THE EFFICACY OF ALIGNMENT? 
+
+```{R}
+rm ( list = ls())
+library ( stringr )
+load ( file.path  (PROJHOME , "Output", "ClusterExportedData" , "2022-08-12analysesforexport.rda"))
+vars  = bigdat$vars
+log.modulus = function(x)sign(x)*log(abs(x)+1,base=10)
+vars$log.modulus=log.modulus(vars$statistic)
+varsnew = vars[ c(1:3, which(vars$pred.speed !=2.5)),]
+ggitem = varsnew
+names(ggitem)[1] = "prop.ds"
+ggitem = ggitem[order(ggitem$pred.speed),]
+save( ggitem , file = file.path ( PROJHOME , "Plots" , "PlotData" , "P01_speedTest.rda"))
+d1 = ggitem[ggitem$prop.ds==0.1,]
+d2 = ggitem[ggitem$prop.ds==0.5,]
+d3 = ggitem[ggitem$prop.ds==0.9,]
+
+#par ( mar = c(5,2,5,8))
+{
+plot ( d1$log.modulus~d1$pred.speed,type="b",
+       #xlim=c(-0.2,1.2),
+       ylim = c(range(ggitem$log.modulus)) ,
+       xlab = "Pred speed" ,
+       ylab = expression(paste ( "Alignment benefit ( " , chi^2 , "score)"  )),
+       col="yellow3",lwd=2
+       # ,xaxt="n"
+       )
+
+lines ( d2$log.modulus~d2$pred.speed,type="b",lwd=2,col = "orange")
+lines ( d3$log.modulus~d3$pred.speed,type="b",lwd=2,col="red")
+abline( h = log.modulus(c( - 3.844,3.844 )),lty=2, col="grey")
+}
+```
+
+# HOW MANY ITERATIONS ENDED IN ESCAPE?
+
+```{R}
+
+# Housekeeping
+
+rm ( list = ls())
+library ( stringr )
+load ( file.path  (PROJHOME , "Output", "ClusterExportedData" , "2022-03-04analysesforexport.rda"))
+
+ends = bigdat$end.storess
+
+length(which ( as.vector( ends) == 200))/
+  length(as.vector(ends))
+
+```
+
+# Do aligners evade predator for longer ?
+
+```{R}
+rm(list = ls())
+load ( file.path  (PROJHOME , "Output", "ClusterExportedData" , "2022-08-12analysesforexport.rda"))
+
+
+vars= bigdat$vars
+whi = vars$pred.speed==1.5
+ends = bigdat$end.storess
+ends =t(ends)
+dim(ends)
+ends = ends[,whi]
+vars = vars[whi,]
+df = data.frame ( prop.d = rep ( vars$prop.d, each = 10000),
+                  ends = as.vector( ends ))
+library(ggplot2)
+ggplot( df , aes ( x = as.factor( prop.d) , y = ends))+
+   gghalves::geom_half_violin(alpha=0.5,side="r")+
+  geom_half_boxplot(alpha=0.5,dotsize = 4,binwidth = 1,side="l",outlier.size = 0, outlier.stroke = 0)+
+  theme_classic(base_size=15)+
+  scale_fill_manual(values=c("yellow2", "orange","red" ))+
+  ylab("Group speed (units / timesteps)")+
+  xlab( "Proportion of centroid attractors")
+
+
+ggplot (speeds, aes ( y = speed , x = as.factor(prop.d) , fill = as.factor(prop.d) ))+
+  gghalves::geom_half_violin(alpha=0.5,side="r")+
+  geom_half_boxplot(alpha=0.5,dotsize = 4,binwidth = 1,side="l",outlier.size = 0, outlier.stroke = 0)+
+  theme_classic(base_size=15)+
+  scale_fill_manual(values=c("yellow2", "orange","red" ))+
+  ylab("Group speed (units / timesteps)")+
+  xlab( "Proportion of centroid attractors")
+
+```
+
+
+
+# ARE ATTRACTORS BEHIND? - DOES PREDATOR ATTACK FROM BEHIND?
+
+
+```{R}
+
+
+
+# Housekeeping
+rm ( list = ls())
+library ( stringr )
+library(LSD)
+
+source( file.path (PROJHOME , "R" , "quickLibrary.r"))
+quickLibrary(file.path ( PROJHOME , "R"))
+
+run.calculations = F
+
+if ( run.calculations){
+  
+  
+  # Files / folders 
+  fold = file.path  (PROJHOME , "Output" , "Data")
+  folds = list.files(fold)
+  
+  # LOOP
+  j=1
+  i=1
+  k=1
+  l=1
+   pred.data = NULL
+   ind.datas = NULL
+     
+  for (  j in 1:length(folds)){
+    fold2 = file.path  (fold , folds[j])
+    files = list.files ( fold2 )
+    for (  i in 1:length(files)){
+      load (file.path(fold2, files[i]))
+      
+      # variables
+      pos.store.list = pos.store.list2$pos.store.list
+      
+      # What are the variables / values of interest
+      var.of.interest = pos.store.list2$var.of.interest[1]
+      val.of.interest = pos.store.list2$var.of.interest[2]
+      val.of.interest = as.numeric( val.of.interest)
+      prop.d          = as.numeric(  substr ( str_split_fixed ( files [i], "-" , 14)[,4], 1,3) )
+      
+      # For each iteration of the model
+      length(pos.store.list)
+      for ( k in 1:200 ){
+        
+        # iteration level metrics
+        pos.store = pos.store.list[[k]]
+        pos = pos.store$pos.store
+        dims = dim(pos)
+        N = dims[1]
+        grid.size = 100
+        end = pos.store$end.store
+        if ( end != 1){
+        cent = NULL
+        for ( l in (end-1):end){
+          cent = rbind ( cent , centroid( pos[,,l])[[1]])
+        }
+        cent.head = atan2(cent[2,1] - cent[1,1], 
+                         cent[2,2] - cent[1,2])
+        cent.end = cent[2,]
+        
+        # Predator
+        pred.end = pos.store$pred.store[,end]
+        pos = rbind ( cent.end , pred.end)
+        dist = dis(1,2,pos)
+        pred.angle=  atan2( pred.end[1] - cent.end[1], 
+               pred.end[2] - cent.end[2]) 
+        angdi. = ang.diff(pred.angle, cent.head)
+        pred.data = rbind( pred.data, c( 
+          var.of.interest = var.of.interest,
+          val.of.interest = val.of.interest,
+          prop.d          = prop.d         ,
+          dist2cent = dist,
+          angle.to.pred.from.cent = angdi.
+          ))
+        
+        # Individuals
+        pos = pos.store$pos.store[,,end]
+        ind.data=NULL
+        for ( l in 1:nrow(pos)){
+          #l=2
+                  ind.end = pos[l,]
+        pos2 = rbind ( cent.end , ind.end)
+        dist = dis(1,2,pos2)
+        ind.angle=  atan2( ind.end[1] - cent.end[1], 
+               ind.end[2] - cent.end[2]) 
+        angdi. = ang.diff(ind.angle, cent.head)
+        ind.data = rbind( ind.data, c( 
+          var.of.interest = var.of.interest,
+          val.of.interest = val.of.interest,
+          prop.d          = prop.d         ,
+          dist2cent = dist,
+          angle.to.ind.from.cent = angdi.,
+          ali.att = ifelse( l <= (nrow(pos)*prop.d), "att" , "ali" )
+          ))
+        
+        }
+       
+        ind.datas=rbind(ind.datas,ind.data)
+        }
+      }
+      
+    }
+    print(j)
+  }
+   pred.data = as.data.frame ( pred.data)
+ind.data  = as.data.frame (  ind.datas)
+for(i in c("dist2cent", "angle.to.pred.from.cent")){
+  pred.data[,i] = as.numeric(pred.data[,i])
+}
+for(i in c("dist2cent", "angle.to.ind.from.cent")){
+  ind.data[,i] = as.numeric(ind.data[,i])
+}
+   save( pred.data,file = file.path ( PROJHOME , "Output" , "analyses", "pred.data.rda"))
+   save( ind.data ,file = file.path ( PROJHOME , "Output" , "analyses", "ind.data.rda" ))
+   pred.ind.data = list ( pred.data, ind.data)
+   save( pred.ind.data , file = file.path ( PROJHOME , "Plots" , "PlotData" , "P02_positiondata.rda"))
+}
+load(file.path ( PROJHOME , "Output" , "analyses", "pred.data.rda"))
+load(file.path ( PROJHOME , "Output" , "analyses", "ind.data.rda" ))
+
+
+
+{
+par(mfrow= c(1,3))
+pred.data.2 = pred.data [ pred.data$prop.d=="0.1",]
+y = pred.data.2$dist2cent * cos( pred.data.2$angle.to.pred.from.cent )
+x = pred.data.2$dist2cent * sin( pred.data.2$angle.to.pred.from.cent )
+heatscatter(x,y,main="",xlim = c(-20,20),ylim = c(-20,20),cex=1,ylab = "y (m)" , xlab = "x (m)")
+abline(h=0,lty=2)
+
+pred.data.2 = pred.data [ pred.data$prop.d=="0.5",]
+y = pred.data.2$dist2cent * cos( pred.data.2$angle.to.pred.from.cent )
+x = pred.data.2$dist2cent * sin( pred.data.2$angle.to.pred.from.cent )
+heatscatter(x,y,main="",xlim = c(-20,20),ylim = c(-20,20),cex=1,ylab = "y (m)" , xlab = "x (m)")
+abline(h=0,lty=2)
+
+pred.data.2 = pred.data [ pred.data$prop.d=="0.9",]
+y = pred.data.2$dist2cent * cos( pred.data.2$angle.to.pred.from.cent )
+x = pred.data.2$dist2cent * sin( pred.data.2$angle.to.pred.from.cent )
+heatscatter(x,y,main="",xlim = c(-20,20),ylim = c(-20,20),cex=1,ylab = "y (m)" , xlab = "x (m)")
+abline(h=0,lty=2)
+}
+
+mycol <- rgb(0, 0, 255, max = 255, alpha = 25)
+mycol2 <- rgb(0, 255,0 , max = 255, alpha = 25)
+mycol3 <- rgb(255, 0,0 , max = 255, alpha = 25)
+Mycol <- rgb(0, 0, 255, max = 255 , alpha = 75)
+Mycol2 <- rgb(0, 255,0 , max = 255, alpha = 75)
+Mycol3 <- rgb(255, 0,0 , max = 255, alpha = 75)
+Mycol <- rgb(0, 0, 255, max = 255 , alpha = 175)
+Mycol2 <- rgb(0, 255,0 , max = 255, alpha = 175)
+Mycol3 <- rgb(255, 0,0 , max = 255, alpha = 175)
+
+
+plottt=  function (prop.D="0.5"){
+  #prop.D=  "0.5"
+  par(mar=c(1,1,1,1))
+attdata = ind.data [ ind.data$ali.att.N1=="att"&ind.data$prop.d==prop.D ,]
+alidata = ind.data [ ind.data$ali.att.N1=="ali"&ind.data$prop.d==prop.D ,]
+pred.data.2 = pred.data [ pred.data$prop.d==prop.D,]
+
+y = pred.data.2$dist2cent * cos( pred.data.2$angle.to.pred.from.cent )
+#x = pred.data.2$dist2cent * sin( pred.data.2$angle.to.pred.from.cent )
+
+x = attdata$dist2cent * sin( attdata$angle.to.ind.from.cent )
+# heatscatter(x,y,main="",xlim = c(-20,20),ylim = c(-20,20),cex=1,ylab = "y (m)" , xlab = "x (m)")
+y2 = attdata$dist2cent * cos( attdata$angle.to.ind.from.cent )
+y3 = alidata$dist2cent * cos( alidata$angle.to.ind.from.cent )
+heatscatter(x,y2,main="",xlim = c(-20,20),ylim = c(-20,20),cex=1,ylab = "y (m)" , xlab = "x (m)")
+
+hist(y[y>-20&y<20]   ,xaxt="n",border = F,main = "", xlab = "" , ylab= "", xlim = c(-20,20),breaks =12,yaxt="n",col=mycol)
+abline ( v = median(y), col =Mycol)
+hist(y2[y2>-20&y2<20],xaxt="n",border = F,main = "", xlab = "" , ylab= "", xlim = c(-20,20),breaks =12,yaxt="n",col= mycol2)
+abline ( v = median(y2), col =Mycol2)
+par(mar=c(3,1,1,1))
+hist(y3[y3>-20&y3<20],border = F,main = "", xlab = "front-back distance to centroid (m)" , ylab= "", xlim = c(-20,20),breaks =12,yaxt="n",col=mycol3)
+abline ( v = median(y3), col =Mycol3)
+plot(c(1:0)~c(-20,20),type="n",bty="n",xaxt="n",yaxt="n")
+abline(h=0.5)
+points( c(0.5,0.5,0.5)~ c( median(y),
+                           median(y2),
+                           median(y3)), col = c(Mycol,Mycol2,Mycol3),pch=19,cex=3)
+
+}
+par(mfcol=c(2,2),mar = rep(1,4))
+plottt(prop.D="0.1")
+plottt(prop.D="0.5")
+plottt(prop.D="0.9")
+#x = alidata$dist2cent * sin( alidata$angle.to.ind.from.cent )
+# heatscatter(x,y,main="",xlim = c(-20,20),ylim = c(-20,20),cex=1,ylab = "y (m)" , xlab = "x (m)")
+
+attdata = ind.data [ ind.data$ali.att.N1=="att"&ind.data$prop.d=="0.5",]
+alidata = ind.data [ ind.data$ali.att.N1=="ali"&ind.data$prop.d=="0.5" ,]
+pred.data.2 = pred.data [ pred.data$prop.d=="0.5",]
+
+
+# 
+# attdata = ind.data [ ind.data$ali.att.N1=="att"&ind.data$prop.d=="0.5" ,]
+# alidata = ind.data [ ind.data$ali.att.N1=="ali"&ind.data$prop.d=="0.5" ,]
+
+y = attdata$dist2cent * cos( attdata$angle.to.ind.from.cent )
+x = attdata$dist2cent * sin( attdata$angle.to.ind.from.cent )
+ heatscatter(x,y,main="",xlim = c(-20,20),ylim = c(-20,20),cex=1,ylab = "y (m)" , xlab = "x (m)")
+
+ 
+y = alidata$dist2cent * cos( alidata$angle.to.ind.from.cent )
+x = alidata$dist2cent * sin( alidata$angle.to.ind.from.cent )
+ heatscatter(x,y,main="",xlim = c(-20,20),ylim = c(-20,20),cex=1,ylab = "y (m)" , xlab = "x (m)")
+
+
+
+y = alidata$dist2cent * cos( alidata$angle.to.ind.from.cent )
+x = alidata$dist2cent * sin( alidata$angle.to.ind.from.cent )
+# heatscatter(x,y,main="",xlim = c(-20,20),ylim = c(-20,20),cex=1,ylab = "y (m)" , xlab = "x (m)")
+hist(y,xlim = c(-20,20),breaks =60)
+
+
+
+attdata = ind.data [ ind.data$ali.att.N1=="att"&ind.data$prop.d=="0.9" ,]
+alidata = ind.data [ ind.data$ali.att.N1=="ali"&ind.data$prop.d=="0.9" ,]
+y = attdata$dist2cent * cos( attdata$angle.to.ind.from.cent )
+x = attdata$dist2cent * sin( attdata$angle.to.ind.from.cent )
+# heatscatter(x,y,main="",xlim = c(-20,20),ylim = c(-20,20),cex=1,ylab = "y (m)" , xlab = "x (m)")
+hist(y,xlim = c(-20,20),breaks =60)
+
+
+y = alidata$dist2cent * cos( alidata$angle.to.ind.from.cent )
+x = alidata$dist2cent * sin( alidata$angle.to.ind.from.cent )
+# heatscatter(x,y,main="",xlim = c(-20,20),ylim = c(-20,20),cex=1,ylab = "y (m)" , xlab = "x (m)")
+
+hist(y,xlim = c(-20,20),breaks =60,col=mycol,border = F)
+
+
+hist(y)
+
+```
+
+
+
+
+
+# Are selfish less predated? 
+
+at different future predicted numbers?
+
+```{R}
+
+```
+

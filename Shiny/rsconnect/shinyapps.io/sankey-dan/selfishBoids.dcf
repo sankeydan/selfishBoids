@@ -1,0 +1,14 @@
+name: selfishBoids
+title: selfishBoids
+username:
+account: sankey-dan
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 4933193
+bundleId: 6225564
+url: https://sankey-dan.shinyapps.io/selfishBoids/
+when: 1661175085.14677
+lastSyncTime: 1661175085.14677
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: appOld.R
